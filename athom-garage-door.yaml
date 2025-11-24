@@ -113,16 +113,21 @@ binary_sensor:
   - platform: status
     name: "Status"
 
-  - platform: gpio
-    name: "Contact"
-    disabled_by_default: true
-    device_class: garage_door
+  - platform: homeassistant
     id: contact
-    pin:
-      number: GPIO18
-      inverted: false
-    filters:
-      - delayed_on: 20ms
+    entity_id: binary_sensor.garage_door_tilt_sensor
+    name: "Garage Tilt Sensor"
+
+  # - platform: gpio
+  #   name: "Contact"
+  #   disabled_by_default: true
+  #   device_class: garage_door
+  #   id: contact
+  #   pin:
+  #     number: GPIO18
+  #     inverted: false
+  #   filters:
+  #     - delayed_on: 20ms
 
   - platform: gpio
     pin:
@@ -180,15 +185,23 @@ cover:
   - platform: template
     device_class: garage
     name: "Garage Door"
-    lambda: "return COVER_CLOSED;"
+    lambda: "return id(contact).state ? COVER_OPEN : COVER_CLOSED;"
     open_action:
       then:
-        - switch.turn_on: relay
+       - if:
+          condition:
+            lambda: 'return !id(contact).state;'
+          then:
+              - switch.turn_on: relay
     stop_action:
       - switch.turn_on: relay
     close_action:
       then:
-        - switch.turn_on: relay
+       - if:
+          condition:
+            lambda: 'return id(contact).state;'
+          then:
+            - switch.turn_on: relay
 
 text_sensor:
   - platform: wifi_info
